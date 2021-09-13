@@ -84,8 +84,6 @@ jobs:
         os: [windows-latest, macos-latest]
     env:
       CIBW_BUILD: ${{matrix.python_tag}}
-      CIBW_TEST_REQUIRES: pytest hypothesis pandas
-      CIBW_TEST_COMMAND: pytest {package}/tests
       CIBW_BUILD_VERBOSITY: 3
 
     steps:
@@ -141,9 +139,6 @@ jobs:
     env:
       CIBW_ARCHS_LINUX: ${{matrix.arch}}
       CIBW_BUILD: ${{matrix.python_tag}}
-      CIBW_TEST_SKIP: "*-manylinux_{aarch64,ppc64le,s390x}"
-      CIBW_TEST_REQUIRES: pytest hypothesis pandas
-      CIBW_TEST_COMMAND: pytest {package}/tests
       CIBW_BUILD_VERBOSITY: 3
 
     steps:
@@ -174,10 +169,6 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     env:
       CIBW_BUILD: "pp37-*"
-      # activate tests when the fix for
-      # https://foss.heptapod.net/pypy/pypy/-/issues/3413 is released
-      CIBW_TEST_REQUIRES: pytest hypothesis pandas
-      CIBW_TEST_COMMAND: pytest {package}/tests
       CIBW_BUILD_VERBOSITY: 3
 
     steps:

@@ -34,14 +34,29 @@ from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
 from types import GenericAlias
 
+cimport cython
+from libcpp.vector cimport vector
+
 Match = _namedtuple('Match', 'a b size')
 
-def _calculate_ratio(matches, length):
+@cython.cdivision(True)
+cdef double _calculate_ratio(Py_ssize_t matches, Py_ssize_t length) except -1.0:
     if length:
         return 2.0 * matches / length
     return 1.0
 
-class SequenceMatcher:
+ctypedef struct MatchingBlockQueueElem:
+    Py_ssize_t alo
+    Py_ssize_t ahi
+    Py_ssize_t blo
+    Py_ssize_t bhi
+
+ctypedef struct CMatch:
+    Py_ssize_t a
+    Py_ssize_t b
+    Py_ssize_t size
+
+cdef class SequenceMatcher:
 
     """
     SequenceMatcher is a flexible class for comparing pairs of sequences of
@@ -148,6 +163,17 @@ class SequenceMatcher:
     real_quick_ratio()
         Return an upper bound on ratio() very quickly.
     """
+
+    cdef object a
+    cdef object b
+    cdef object b2j
+    cdef object fullbcount
+    cdef object matching_blocks
+    cdef object opcodes
+    cdef object isjunk
+    cdef object bjunk
+    cdef object bpopular
+    cdef object autojunk
 
     def __init__(self, isjunk=None, a='', b='', autojunk=True):
         """Construct a SequenceMatcher.
@@ -306,6 +332,7 @@ class SequenceMatcher:
         # of junk.  I.e., we don't call isjunk at all yet.  Throwing
         # out the junk later is much cheaper than building b2j "right"
         # from the start.
+        cdef Py_ssize_t i
         b = self.b
         self.b2j = b2j = {}
 
@@ -334,51 +361,11 @@ class SequenceMatcher:
             for elt in popular: # ditto; as fast for 1% deletion
                 del b2j[elt]
 
-    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
-        """Find longest matching block in a[alo:ahi] and b[blo:bhi].
-
-        By default it will find the longest match in the entirety of a and b.
-
-        If isjunk is not defined:
-
-        Return (i,j,k) such that a[i:i+k] is equal to b[j:j+k], where
-            alo <= i <= i+k <= ahi
-            blo <= j <= j+k <= bhi
-        and for all (i',j',k') meeting those conditions,
-            k >= k'
-            i <= i'
-            and if i == i', j <= j'
-
-        In other words, of all maximal matching blocks, return one that
-        starts earliest in a, and of all those maximal matching blocks that
-        start earliest in a, return the one that starts earliest in b.
-
-        >>> s = SequenceMatcher(None, " abcd", "abcd abcd")
-        >>> s.find_longest_match(0, 5, 0, 9)
-        Match(a=0, b=4, size=5)
-
-        If isjunk is defined, first the longest matching block is
-        determined as above, but with the additional restriction that no
-        junk element appears in the block.  Then that block is extended as
-        far as possible by matching (only) junk elements on both sides.  So
-        the resulting block never matches on junk except as identical junk
-        happens to be adjacent to an "interesting" match.
-
-        Here's the same example as before, but considering blanks to be
-        junk.  That prevents " abcd" from matching the " abcd" at the tail
-        end of the second sequence directly.  Instead only the "abcd" can
-        match, and matches the leftmost "abcd" in the second sequence:
-
-        >>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
-        >>> s.find_longest_match(0, 5, 0, 9)
-        Match(a=1, b=0, size=4)
-
-        If no blocks match, return (alo, blo, 0).
-
-        >>> s = SequenceMatcher(None, "ab", "c")
-        >>> s.find_longest_match(0, 2, 0, 1)
-        Match(a=0, b=0, size=0)
-        """
+    cdef CMatch __find_longest_match(self, Py_ssize_t alo, Py_ssize_t ahi, Py_ssize_t blo, Py_ssize_t bhi) except *:
+        cdef object a = self.a
+        cdef object b = self.b
+        cdef Py_ssize_t besti, bestj, bestsize
+        cdef Py_ssize_t i, j, k
 
         # CAUTION:  stripping common prefix or suffix would be incorrect.
         # E.g.,
@@ -392,11 +379,7 @@ class SequenceMatcher:
         # Windiff ends up at the same place as diff, but by pairing up
         # the unique 'b's and then matching the first two 'a's.
 
-        a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
-        if ahi is None:
-            ahi = len(a)
-        if bhi is None:
-            bhi = len(b)
+        b2j, isbjunk = self.b2j, self.bjunk.__contains__
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest
@@ -448,7 +431,58 @@ class SequenceMatcher:
               a[besti+bestsize] == b[bestj+bestsize]:
             bestsize = bestsize + 1
 
-        return Match(besti, bestj, bestsize)
+        return CMatch(besti, bestj, bestsize)
+
+    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
+        """Find longest matching block in a[alo:ahi] and b[blo:bhi].
+
+        By default it will find the longest match in the entirety of a and b.
+
+        If isjunk is not defined:
+
+        Return (i,j,k) such that a[i:i+k] is equal to b[j:j+k], where
+            alo <= i <= i+k <= ahi
+            blo <= j <= j+k <= bhi
+        and for all (i',j',k') meeting those conditions,
+            k >= k'
+            i <= i'
+            and if i == i', j <= j'
+
+        In other words, of all maximal matching blocks, return one that
+        starts earliest in a, and of all those maximal matching blocks that
+        start earliest in a, return the one that starts earliest in b.
+
+        >>> s = SequenceMatcher(None, " abcd", "abcd abcd")
+        >>> s.find_longest_match(0, 5, 0, 9)
+        Match(a=0, b=4, size=5)
+
+        If isjunk is defined, first the longest matching block is
+        determined as above, but with the additional restriction that no
+        junk element appears in the block.  Then that block is extended as
+        far as possible by matching (only) junk elements on both sides.  So
+        the resulting block never matches on junk except as identical junk
+        happens to be adjacent to an "interesting" match.
+
+        Here's the same example as before, but considering blanks to be
+        junk.  That prevents " abcd" from matching the " abcd" at the tail
+        end of the second sequence directly.  Instead only the "abcd" can
+        match, and matches the leftmost "abcd" in the second sequence:
+
+        >>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
+        >>> s.find_longest_match(0, 5, 0, 9)
+        Match(a=1, b=0, size=4)
+
+        If no blocks match, return (alo, blo, 0).
+
+        >>> s = SequenceMatcher(None, "ab", "c")
+        >>> s.find_longest_match(0, 2, 0, 1)
+        Match(a=0, b=0, size=0)
+        """
+        cdef Py_ssize_t ahi_ = ahi if ahi is not None else len(self.a)
+        cdef Py_ssize_t bhi_ = bhi if bhi is not None else len(self.b)
+        match = self.__find_longest_match(alo, ahi_, blo, bhi_)
+
+        return Match(match.a, match.b, match.size)
 
     def get_matching_blocks(self):
         """Return list of triples describing matching subsequences.
@@ -468,6 +502,11 @@ class SequenceMatcher:
         >>> list(s.get_matching_blocks())
         [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
         """
+        cdef Py_ssize_t la, lb
+        cdef Py_ssize_t i1, j1, k1, i2, j2, k2
+        cdef Py_ssize_t alo, ahi, blo, bhi
+        cdef size_t queue_head
+        cdef vector[MatchingBlockQueueElem] queue
 
         if self.matching_blocks is not None:
             return self.matching_blocks
@@ -479,20 +518,28 @@ class SequenceMatcher:
         # ('queue`) of blocks we still need to look at, and append partial
         # results to `matching_blocks` in a loop; the matches are sorted
         # at the end.
-        queue = [(0, la, 0, lb)]
+        queue.push_back(MatchingBlockQueueElem(0, la, 0, lb))
+        #queue = [(0, la, 0, lb)]
         matching_blocks = []
-        while queue:
-            alo, ahi, blo, bhi = queue.pop()
-            i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
+        while not queue.empty():
+            elem = queue.back()
+            alo = elem.alo
+            ahi = elem.ahi
+            blo = elem.blo
+            bhi = elem.bhi
+            queue.pop_back()
+            #alo, ahi, blo, bhi = queue.pop()
+            match = self.__find_longest_match(alo, ahi, blo, bhi)
+            #i, j, k = x = self.__find_longest_match(alo, ahi, blo, bhi)
             # a[alo:i] vs b[blo:j] unknown
             # a[i:i+k] same as b[j:j+k]
             # a[i+k:ahi] vs b[j+k:bhi] unknown
-            if k:   # if k is 0, there was no matching block
-                matching_blocks.append(x)
-                if alo < i and blo < j:
-                    queue.append((alo, i, blo, j))
-                if i+k < ahi and j+k < bhi:
-                    queue.append((i+k, ahi, j+k, bhi))
+            if match.size:   # if k is 0, there was no matching block
+                matching_blocks.append(Match(match.a, match.b, match.size))
+                if alo < match.a and blo < match.b:
+                    queue.push_back(MatchingBlockQueueElem(alo, match.a, blo, match.b))
+                if match.a+match.size < ahi and match.b+match.size < bhi:
+                    queue.push_back(MatchingBlockQueueElem(match.a+match.size, ahi, match.b+match.size, bhi))
         matching_blocks.sort()
 
         # It's possible that we have adjacent equal blocks in the
