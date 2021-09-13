@@ -36,8 +36,27 @@ from types import GenericAlias
 
 cimport cython
 from libcpp.vector cimport vector
+from libcpp.algorithm cimport fill, sort as cpp_sort
+from libc.stdlib cimport malloc, free
+from libcpp.unordered_map cimport unordered_map
 
 Match = _namedtuple('Match', 'a b size')
+"""
+cdef class Match:
+    cdef public Py_ssize_t a
+    cdef public Py_ssize_t b
+    cdef public Py_ssize_t size
+
+    def __init__(self, a, b, size):
+        self.a = a
+        self.b = b
+        self.size = size
+    
+    def __getitem__(self, i):
+        if i==0 or i==-3: return self.a
+        if i==1 or i==-2: return self.b
+        if i==2 or i==-1: return self.size
+        raise IndexError('tuple index out of range')"""
 
 @cython.cdivision(True)
 cdef double _calculate_ratio(Py_ssize_t matches, Py_ssize_t length) except -1.0:
@@ -55,6 +74,13 @@ ctypedef struct CMatch:
     Py_ssize_t a
     Py_ssize_t b
     Py_ssize_t size
+
+cdef int CMatch_sorter(const CMatch& lhs, const CMatch& rhs):
+    if lhs.a != rhs.a:
+        return lhs.a < rhs.a
+    if lhs.b != rhs.b:
+        return lhs.b < rhs.b
+    return lhs.size < rhs.size
 
 cdef class SequenceMatcher:
 
@@ -166,14 +192,20 @@ cdef class SequenceMatcher:
 
     cdef object a
     cdef object b
-    cdef object b2j
-    cdef object fullbcount
-    cdef object matching_blocks
-    cdef object opcodes
+    cdef dict b2j
+    cdef dict fullbcount
+    cdef list matching_blocks
+    cdef list opcodes
     cdef object isjunk
-    cdef object bjunk
-    cdef object bpopular
+    cdef set bjunk
+    cdef set bpopular
     cdef object autojunk
+
+    cdef vector[Py_ssize_t] j2len_
+    cdef Py_hash_t* a_
+    cdef Py_ssize_t la
+    cdef Py_hash_t* b_
+    cdef Py_ssize_t lb
 
     def __init__(self, isjunk=None, a='', b='', autojunk=True):
         """Construct a SequenceMatcher.
@@ -239,7 +271,7 @@ cdef class SequenceMatcher:
         self.autojunk = autojunk
         self.set_seqs(a, b)
 
-    def set_seqs(self, a, b):
+    cpdef set_seqs(self, a, b):
         """Set the two sequences to be compared.
 
         >>> s = SequenceMatcher()
@@ -251,7 +283,7 @@ cdef class SequenceMatcher:
         self.set_seq1(a)
         self.set_seq2(b)
 
-    def set_seq1(self, a):
+    cpdef set_seq1(self, a):
         """Set the first sequence to be compared.
 
         The second sequence to be compared is not changed.
@@ -271,13 +303,14 @@ cdef class SequenceMatcher:
 
         See also set_seqs() and set_seq2().
         """
-
+        cdef Py_ssize_t i
         if a is self.a:
             return
         self.a = a
         self.matching_blocks = self.opcodes = None
+        self.la = len(a)
 
-    def set_seq2(self, b):
+    cpdef set_seq2(self, b):
         """Set the second sequence to be compared.
 
         The first sequence to be compared is not changed.
@@ -297,12 +330,15 @@ cdef class SequenceMatcher:
 
         See also set_seqs() and set_seq1().
         """
+        cdef Py_ssize_t i
 
         if b is self.b:
             return
         self.b = b
+        self.j2len_.resize(<size_t>len(b))
         self.matching_blocks = self.opcodes = None
         self.fullbcount = None
+        self.lb = len(b)
         self.__chain_b()
 
     # For each element x in b, set b2j[x] to a list of the indices in
@@ -321,7 +357,7 @@ cdef class SequenceMatcher:
     # kinds of matches, it's best to call set_seq2 once, then set_seq1
     # repeatedly
 
-    def __chain_b(self):
+    cdef __chain_b(self):
         # Because isjunk is a user-defined (not C) function, and we test
         # for junk a LOT, it's important to minimize the number of calls.
         # Before the tricks described here, __chain_b was by far the most
@@ -364,8 +400,10 @@ cdef class SequenceMatcher:
     cdef CMatch __find_longest_match(self, Py_ssize_t alo, Py_ssize_t ahi, Py_ssize_t blo, Py_ssize_t bhi) except *:
         cdef object a = self.a
         cdef object b = self.b
+        cdef list indexes
         cdef Py_ssize_t besti, bestj, bestsize
         cdef Py_ssize_t i, j, k
+        cdef Py_ssize_t index_len, pos, next_val
 
         # CAUTION:  stripping common prefix or suffix would be incorrect.
         # E.g.,
@@ -380,40 +418,56 @@ cdef class SequenceMatcher:
         # the unique 'b's and then matching the first two 'a's.
 
         b2j, isbjunk = self.b2j, self.bjunk.__contains__
+        isjunk = self.isjunk
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest
         # junk-free match ending with a[i-1] and b[j]
-        j2len = {}
         nothing = []
         for i in range(alo, ahi):
             # look at all instances of a[i] in b; note that because
             # b2j has no junk keys, the loop is skipped if a[i] is junk
-            j2lenget = j2len.get
-            newj2len = {}
-            for j in b2j.get(a[i], nothing):
-                # a[i] matches b[j]
+            indexes = <list>b2j.get(a[i], nothing)
+            index_len = len(indexes)
+            pos = 0
+            next_val = 0
+            while pos < index_len:
+                j = indexes[pos]
                 if j < blo:
+                    pos += 1
                     continue
+                next_val = self.j2len_[j]
+                break
+
+            while pos < index_len:
+                j = indexes[pos]
                 if j >= bhi:
                     break
-                k = newj2len[j] = j2lenget(j-1, 0) + 1
+                k = next_val + 1
+                if pos + 1 < index_len:
+                    next_val = self.j2len_[indexes[pos + 1]]
+                self.j2len_[j + 1] = k
                 if k > bestsize:
-                    besti, bestj, bestsize = i-k+1, j-k+1, k
-            j2len = newj2len
+                    besti = i + k + 1
+                    bestj = j - k + 1
+                    bestsize = k
+                pos += 1
+
+        fill(self.j2len_.begin() + blo, self.j2len_.begin() + bhi, 0)
 
         # Extend the best by non-junk elements on each end.  In particular,
         # "popular" non-junk elements aren't in b2j, which greatly speeds
         # the inner loop above, but also means "the best" match so far
         # doesn't contain any junk *or* popular non-junk elements.
-        while besti > alo and bestj > blo and \
-              not isbjunk(b[bestj-1]) and \
-              a[besti-1] == b[bestj-1]:
-            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
-        while besti+bestsize < ahi and bestj+bestsize < bhi and \
-              not isbjunk(b[bestj+bestsize]) and \
-              a[besti+bestsize] == b[bestj+bestsize]:
-            bestsize += 1
+        if self.autojunk and len(b) >= 200:
+            while besti > alo and bestj > blo and \
+                  (isjunk is None or not isbjunk(b[bestj-1])) and \
+                  a[besti-1] == b[bestj-1]:
+                besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
+            while besti+bestsize < ahi and bestj+bestsize < bhi and \
+                  (isjunk is None or not isbjunk(b[bestj+bestsize])) and \
+                  a[besti+bestsize] == b[bestj+bestsize]:
+                bestsize += 1
 
         # Now that we have a wholly interesting match (albeit possibly
         # empty!), we may as well suck up the matching junk on each
@@ -422,14 +476,15 @@ cdef class SequenceMatcher:
         # figuring out what to do with it.  In the case of an empty
         # interesting match, this is clearly the right thing to do,
         # because no other kind of match is possible in the regions.
-        while besti > alo and bestj > blo and \
-              isbjunk(b[bestj-1]) and \
-              a[besti-1] == b[bestj-1]:
-            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
-        while besti+bestsize < ahi and bestj+bestsize < bhi and \
-              isbjunk(b[bestj+bestsize]) and \
-              a[besti+bestsize] == b[bestj+bestsize]:
-            bestsize = bestsize + 1
+        if isjunk is not None:
+            while besti > alo and bestj > blo and \
+                  isbjunk(b[bestj-1]) and \
+                  a[besti-1] == b[bestj-1]:
+                besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
+            while besti+bestsize < ahi and bestj+bestsize < bhi and \
+                  isbjunk(b[bestj+bestsize]) and \
+                  a[besti+bestsize] == b[bestj+bestsize]:
+                bestsize = bestsize + 1
 
         return CMatch(besti, bestj, bestsize)
 
@@ -484,7 +539,7 @@ cdef class SequenceMatcher:
 
         return Match(match.a, match.b, match.size)
 
-    def get_matching_blocks(self):
+    cpdef get_matching_blocks(self):
         """Return list of triples describing matching subsequences.
 
         Each triple is of the form (i, j, n), and means that
@@ -502,15 +557,14 @@ cdef class SequenceMatcher:
         >>> list(s.get_matching_blocks())
         [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
         """
-        cdef Py_ssize_t la, lb
         cdef Py_ssize_t i1, j1, k1, i2, j2, k2
         cdef Py_ssize_t alo, ahi, blo, bhi
         cdef size_t queue_head
         cdef vector[MatchingBlockQueueElem] queue
+        cdef vector[CMatch] matching_blocks_pass1
 
         if self.matching_blocks is not None:
             return self.matching_blocks
-        la, lb = len(self.a), len(self.b)
 
         # This is most naturally expressed as a recursive algorithm, but
         # at least one user bumped into extreme use cases that exceeded
@@ -518,9 +572,7 @@ cdef class SequenceMatcher:
         # ('queue`) of blocks we still need to look at, and append partial
         # results to `matching_blocks` in a loop; the matches are sorted
         # at the end.
-        queue.push_back(MatchingBlockQueueElem(0, la, 0, lb))
-        #queue = [(0, la, 0, lb)]
-        matching_blocks = []
+        queue.push_back(MatchingBlockQueueElem(0, self.la, 0, self.lb))
         while not queue.empty():
             elem = queue.back()
             alo = elem.alo
@@ -528,26 +580,28 @@ cdef class SequenceMatcher:
             blo = elem.blo
             bhi = elem.bhi
             queue.pop_back()
-            #alo, ahi, blo, bhi = queue.pop()
             match = self.__find_longest_match(alo, ahi, blo, bhi)
-            #i, j, k = x = self.__find_longest_match(alo, ahi, blo, bhi)
             # a[alo:i] vs b[blo:j] unknown
             # a[i:i+k] same as b[j:j+k]
             # a[i+k:ahi] vs b[j+k:bhi] unknown
             if match.size:   # if k is 0, there was no matching block
-                matching_blocks.append(Match(match.a, match.b, match.size))
+                matching_blocks_pass1.push_back(match)
                 if alo < match.a and blo < match.b:
                     queue.push_back(MatchingBlockQueueElem(alo, match.a, blo, match.b))
                 if match.a+match.size < ahi and match.b+match.size < bhi:
                     queue.push_back(MatchingBlockQueueElem(match.a+match.size, ahi, match.b+match.size, bhi))
-        matching_blocks.sort()
+        cpp_sort(matching_blocks_pass1.begin(), matching_blocks_pass1.end(), &CMatch_sorter)
 
         # It's possible that we have adjacent equal blocks in the
         # matching_blocks list now.  Starting with 2.5, this code was added
         # to collapse them.
         i1 = j1 = k1 = 0
         non_adjacent = []
-        for i2, j2, k2 in matching_blocks:
+        for match in matching_blocks_pass1:
+            i2 = match.a
+            j2 = match.b
+            k2 = match.size
+            #for i2, j2, k2 in matching_blocks:
             # Is this block adjacent to i1, j1, k1?
             if i1 + k1 == i2 and j1 + k1 == j2:
                 # Yes, so collapse them -- this just increases the length of
@@ -559,13 +613,13 @@ cdef class SequenceMatcher:
                 # the dummy we started with), and make the second block the
                 # new block to compare against.
                 if k1:
-                    non_adjacent.append((i1, j1, k1))
+                    non_adjacent.append(Match(i1, j1, k1))
                 i1, j1, k1 = i2, j2, k2
         if k1:
-            non_adjacent.append((i1, j1, k1))
+            non_adjacent.append(Match(i1, j1, k1))
 
-        non_adjacent.append( (la, lb, 0) )
-        self.matching_blocks = list(map(Match._make, non_adjacent))
+        non_adjacent.append(Match(self.la, self.lb, 0))
+        self.matching_blocks = non_adjacent
         return self.matching_blocks
 
     def get_opcodes(self):
@@ -2125,19 +2179,15 @@ def restore(delta, which):
     tree
     emu
     """
-    try:
-        tag = {1: "- ", 2: "+ "}[int(which)]
-    except KeyError:
+    cdef Py_ssize_t _which = int(which)
+    if _which == 1:
+        tag = "- "
+    elif _which == 2:
+        tag = "+ "
+    else:
         raise ValueError('unknown delta choice (must be 1 or 2): %r'
                            % which) from None
     prefixes = ("  ", tag)
     for line in delta:
         if line[:2] in prefixes:
             yield line[2:]
-
-def _test():
-    import doctest, difflib
-    return doctest.testmod(difflib)
-
-if __name__ == "__main__":
-    _test()
