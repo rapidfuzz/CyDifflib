@@ -7796,7 +7796,7 @@ static PyObject *__pyx_f_9cydifflib_15SequenceMatcher_set_seq2(struct __pyx_obj_
  *         if b is self.b:
  *             return             # <<<<<<<<<<<<<<
  *         self.b = b
- *         self.j2len_.resize(<size_t>len(b))
+ *         self.j2len_.resize(<size_t>len(b) + 1)
  */
     __Pyx_XDECREF(__pyx_r);
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
@@ -7815,7 +7815,7 @@ static PyObject *__pyx_f_9cydifflib_15SequenceMatcher_set_seq2(struct __pyx_obj_
  *         if b is self.b:
  *             return
  *         self.b = b             # <<<<<<<<<<<<<<
- *         self.j2len_.resize(<size_t>len(b))
+ *         self.j2len_.resize(<size_t>len(b) + 1)
  *         self.matching_blocks = self.opcodes = None
  */
   __Pyx_INCREF(__pyx_v_b);
@@ -7827,13 +7827,13 @@ static PyObject *__pyx_f_9cydifflib_15SequenceMatcher_set_seq2(struct __pyx_obj_
   /* "cydifflib.pyx":338
  *             return
  *         self.b = b
- *         self.j2len_.resize(<size_t>len(b))             # <<<<<<<<<<<<<<
+ *         self.j2len_.resize(<size_t>len(b) + 1)             # <<<<<<<<<<<<<<
  *         self.matching_blocks = self.opcodes = None
  *         self.fullbcount = None
  */
   __pyx_t_8 = PyObject_Length(__pyx_v_b); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 338, __pyx_L1_error)
   try {
-    __pyx_v_self->j2len_.resize(((size_t)__pyx_t_8));
+    __pyx_v_self->j2len_.resize((((size_t)__pyx_t_8) + 1));
   } catch(...) {
     __Pyx_CppExn2PyErr();
     __PYX_ERR(0, 338, __pyx_L1_error)
@@ -7841,7 +7841,7 @@ static PyObject *__pyx_f_9cydifflib_15SequenceMatcher_set_seq2(struct __pyx_obj_
 
   /* "cydifflib.pyx":339
  *         self.b = b
- *         self.j2len_.resize(<size_t>len(b))
+ *         self.j2len_.resize(<size_t>len(b) + 1)
  *         self.matching_blocks = self.opcodes = None             # <<<<<<<<<<<<<<
  *         self.fullbcount = None
  *         self.lb = len(b)
@@ -7858,7 +7858,7 @@ static PyObject *__pyx_f_9cydifflib_15SequenceMatcher_set_seq2(struct __pyx_obj_
   __pyx_v_self->opcodes = ((PyObject*)Py_None);
 
   /* "cydifflib.pyx":340
- *         self.j2len_.resize(<size_t>len(b))
+ *         self.j2len_.resize(<size_t>len(b) + 1)
  *         self.matching_blocks = self.opcodes = None
  *         self.fullbcount = None             # <<<<<<<<<<<<<<
  *         self.lb = len(b)
@@ -8914,7 +8914,7 @@ static __pyx_t_9cydifflib_CMatch __pyx_f_9cydifflib_15SequenceMatcher__SequenceM
  *                     next_val = self.j2len_[indexes[pos + 1]]
  *                 self.j2len_[j + 1] = k             # <<<<<<<<<<<<<<
  *                 if k > bestsize:
- *                     besti = i + k + 1
+ *                     besti = i - k + 1
  */
       (__pyx_v_self->j2len_[(__pyx_v_j + 1)]) = __pyx_v_k;
 
@@ -8922,7 +8922,7 @@ static __pyx_t_9cydifflib_CMatch __pyx_f_9cydifflib_15SequenceMatcher__SequenceM
  *                     next_val = self.j2len_[indexes[pos + 1]]
  *                 self.j2len_[j + 1] = k
  *                 if k > bestsize:             # <<<<<<<<<<<<<<
- *                     besti = i + k + 1
+ *                     besti = i - k + 1
  *                     bestj = j - k + 1
  */
       __pyx_t_7 = ((__pyx_v_k > __pyx_v_bestsize) != 0);
@@ -8931,15 +8931,15 @@ static __pyx_t_9cydifflib_CMatch __pyx_f_9cydifflib_15SequenceMatcher__SequenceM
         /* "cydifflib.pyx":451
  *                 self.j2len_[j + 1] = k
  *                 if k > bestsize:
- *                     besti = i + k + 1             # <<<<<<<<<<<<<<
+ *                     besti = i - k + 1             # <<<<<<<<<<<<<<
  *                     bestj = j - k + 1
  *                     bestsize = k
  */
-        __pyx_v_besti = ((__pyx_v_i + __pyx_v_k) + 1);
+        __pyx_v_besti = ((__pyx_v_i - __pyx_v_k) + 1);
 
         /* "cydifflib.pyx":452
  *                 if k > bestsize:
- *                     besti = i + k + 1
+ *                     besti = i - k + 1
  *                     bestj = j - k + 1             # <<<<<<<<<<<<<<
  *                     bestsize = k
  *                 pos += 1
@@ -8947,7 +8947,7 @@ static __pyx_t_9cydifflib_CMatch __pyx_f_9cydifflib_15SequenceMatcher__SequenceM
         __pyx_v_bestj = ((__pyx_v_j - __pyx_v_k) + 1);
 
         /* "cydifflib.pyx":453
- *                     besti = i + k + 1
+ *                     besti = i - k + 1
  *                     bestj = j - k + 1
  *                     bestsize = k             # <<<<<<<<<<<<<<
  *                 pos += 1
@@ -8959,7 +8959,7 @@ static __pyx_t_9cydifflib_CMatch __pyx_f_9cydifflib_15SequenceMatcher__SequenceM
  *                     next_val = self.j2len_[indexes[pos + 1]]
  *                 self.j2len_[j + 1] = k
  *                 if k > bestsize:             # <<<<<<<<<<<<<<
- *                     besti = i + k + 1
+ *                     besti = i - k + 1
  *                     bestj = j - k + 1
  */
       }
@@ -42722,6 +42722,14 @@ if (!__Pyx_RefNanny) {
 /* #### Code section: cleanup_globals ### */
 /* #### Code section: cleanup_module ### */
 /* #### Code section: main_method ### */
+/* #### Code section: utility_code_pragmas ### */
+#if _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+#endif
+
+
+
 /* #### Code section: utility_code_def ### */
 
 /* --- Runtime support code --- */
@@ -50213,6 +50221,13 @@ static CYTHON_INLINE PyObject * __Pyx_PyBool_FromLong(long b) {
 static CYTHON_INLINE PyObject * __Pyx_PyInt_FromSize_t(size_t ival) {
     return PyInt_FromSize_t(ival);
 }
+
+
+/* #### Code section: utility_code_pragmas_end ### */
+#if _MSV_VER
+#pragma warning( pop )
+#endif
+
 
 
 /* #### Code section: end ### */

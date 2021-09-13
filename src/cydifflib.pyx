@@ -335,7 +335,7 @@ cdef class SequenceMatcher:
         if b is self.b:
             return
         self.b = b
-        self.j2len_.resize(<size_t>len(b))
+        self.j2len_.resize(<size_t>len(b) + 1)
         self.matching_blocks = self.opcodes = None
         self.fullbcount = None
         self.lb = len(b)
@@ -448,7 +448,7 @@ cdef class SequenceMatcher:
                     next_val = self.j2len_[indexes[pos + 1]]
                 self.j2len_[j + 1] = k
                 if k > bestsize:
-                    besti = i + k + 1
+                    besti = i - k + 1
                     bestj = j - k + 1
                     bestsize = k
                 pos += 1
