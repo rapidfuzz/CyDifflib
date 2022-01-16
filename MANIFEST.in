@@ -1,0 +1,8 @@
+include setup.py
+include CMakeLists.txt
+include README.md
+include LICENSE
+include pyproject.toml
+
+include src/cython/CMakeLists.txt
+include src/cython/_initialize.pyx

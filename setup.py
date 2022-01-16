@@ -1,46 +1,32 @@
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
-import sys
+from skbuild import setup
 
-class BuildExt(build_ext):
-    """A custom build extension for adding compiler-specific options."""
-    c_opts = {
-        'msvc': ['/EHsc', '/O2', '/W4', '/DNDEBUG'],
-        'unix': ['-O3', '-std=c++11', '-Wextra', '-Wall', '-Wconversion', '-g0', '-DNDEBUG'],
-    }
-    l_opts = {
-        'msvc': [],
-        'unix': [],
-    }
+with open('README.md', 'rt', encoding="utf8") as f:
+    readme = f.read()
 
-    if sys.platform == 'darwin':
-        darwin_opts = ['-stdlib=libc++', '-mmacosx-version-min=10.9']
-        c_opts['unix'] += darwin_opts
-        l_opts['unix'] += darwin_opts
+setup(
+    name="cydifflib",
+    version="1.0.0",
+    url="https://github.com/maxbachmann/cydifflib",
+    author="Max Bachmann",
+    author_email="pypi@maxbachmann.de",
+    description="Fast implementation of difflib's algorithms",
+    long_description=readme,
+    long_description_content_type="text/markdown",
 
-    def build_extensions(self):
-        ct = self.compiler.compiler_type
-        opts = self.c_opts.get(ct, [])
-        link_opts = self.l_opts.get(ct, [])
-        if ct == 'unix':
-            opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
-        elif ct == 'msvc':
-            opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
-        for ext in self.extensions:
-            ext.extra_compile_args += opts
-            ext.extra_link_args += link_opts
-        build_ext.build_extensions(self)
+    license="MIT",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "License :: OSI Approved :: MIT License"
+    ],
 
-ext_modules = [
-    Extension(
-        name='cydifflib',
-        sources=['src/cydifflib.cpp'],
-        language='c++',
-    )
-]
-
-if __name__ == "__main__":
-    setup(
-        cmdclass={'build_ext': BuildExt},
-        ext_modules = ext_modules
-    )
+    packages=["cydifflib"],
+    package_dir={'':'src'},
+    zip_safe=True,
+    include_package_data=True,
+    python_requires=">=3.6",
+)

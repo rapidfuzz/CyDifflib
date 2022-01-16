@@ -1,0 +1,5 @@
+add_cython_target(_initialize CXX)
+add_library(_initialize MODULE ${_initialize})
+target_compile_features(_initialize PUBLIC cxx_std_11)
+python_extension_module(_initialize)
+install(TARGETS _initialize LIBRARY DESTINATION src/cydifflib)
