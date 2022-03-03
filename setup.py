@@ -5,7 +5,7 @@ with open('README.md', 'rt', encoding="utf8") as f:
 
 setup(
     name="cydifflib",
-    version="1.0.0",
+    version="1.0.1",
     url="https://github.com/maxbachmann/cydifflib",
     author="Max Bachmann",
     author_email="pypi@maxbachmann.de",

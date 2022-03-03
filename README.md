@@ -71,4 +71,4 @@ PRs are welcome!
 Thank you :heart:
 
 ## ⚠️ License
-Copyright 2021 - present [maxbachmann](https://github.com/maxbachmann). `CyDifflib` is free and open-source software licensed under the [MIT License](https://github.com/maxbachmann/CyDifflib/blob/main/LICENSE).
+Copyright 2021-present [Max Bachmann](https://github.com/maxbachmann). `CyDifflib` is free and open-source software licensed under the [MIT License](https://github.com/maxbachmann/CyDifflib/blob/main/LICENSE).

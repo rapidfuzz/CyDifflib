@@ -128,6 +128,7 @@ cdef class SequenceMatcher:
 
     # todo this is not threadsafe, which could be an problem in the long run
     cdef vector[Py_ssize_t] j2len_
+    cdef vector[Py_ssize_t] newj2len_
     cdef Py_hash_t* a_
     cdef Py_ssize_t la
     cdef Py_hash_t* b_
@@ -261,6 +262,7 @@ cdef class SequenceMatcher:
             return
         self.b = b
         self.j2len_.resize(<size_t>len(b) + 1)
+        self.newj2len_.resize(<size_t>len(b) + 1)
         self.matching_blocks = self.opcodes = None
         self.fullbcount = None
         self.lb = len(b)
@@ -350,52 +352,36 @@ cdef class SequenceMatcher:
         for i in range(alo, ahi):
             # look at all instances of a[i] in b; note that because
             # b2j has no junk keys, the loop is skipped if a[i] is junk
-            indexes = <list>b2j.get(a[i], nothing)
-            index_len = len(indexes)
-            pos = 0
-            next_val = 0
-            found = 0
-            while pos < index_len:
-                j = indexes[pos]
+            for j in <list>b2j.get(a[i], nothing):
+                # a[i] matches b[j]
                 if j < blo:
-                    pos += 1
                     continue
-                next_val = self.j2len_[j]
-                break
-
-            while pos < index_len:
-                j = indexes[pos]
                 if j >= bhi:
                     break
-                found = 1
-                k = next_val + 1
-                if pos + 1 < index_len:
-                    next_val = self.j2len_[indexes[pos + 1]]
-                self.j2len_[j + 1] = k
+                k = self.j2len_[j] + 1
+                self.newj2len_[j + 1] = k
                 if k > bestsize:
-                    besti, bestj, bestsize = i-k+1, j-k+1, k
-                pos += 1
-            if not found:
-                fill(self.j2len_.begin() + blo, self.j2len_.begin() + bhi, 0)
+                   besti = i-k+1
+                   bestj = j-k+1
+                   bestsize = k
 
-        fill(self.j2len_.begin() + blo, self.j2len_.begin() + bhi, 0)
+            self.j2len_.swap(self.newj2len_)
+            fill(self.newj2len_.begin() + blo, self.newj2len_.begin() + bhi + 1, 0)
+
+        fill(self.j2len_.begin() + blo, self.j2len_.begin() + bhi + 1, 0)
 
         # Extend the best by non-junk elements on each end.  In particular,
         # "popular" non-junk elements aren't in b2j, which greatly speeds
         # the inner loop above, but also means "the best" match so far
         # doesn't contain any junk *or* popular non-junk elements.
-        #if self.autojunk and len(b) >= 200: todo
-        if True:
-            #(isjunk is None or not isbjunk(b[bestj-1])) and \
-            while besti > alo and bestj > blo and \
-                  not isbjunk(b[bestj-1]) and \
-                  a[besti-1] == b[bestj-1]:
-                besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
-            #(isjunk is None or not isbjunk(b[bestj+bestsize])) and \
-            while besti+bestsize < ahi and bestj+bestsize < bhi and \
-                  not isbjunk(b[bestj+bestsize]) and \
-                  a[besti+bestsize] == b[bestj+bestsize]:
-                bestsize += 1
+        while besti > alo and bestj > blo and \
+              not isbjunk(b[bestj-1]) and \
+              a[besti-1] == b[bestj-1]:
+            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
+        while besti+bestsize < ahi and bestj+bestsize < bhi and \
+              not isbjunk(b[bestj+bestsize]) and \
+              a[besti+bestsize] == b[bestj+bestsize]:
+            bestsize += 1
 
         # Now that we have a wholly interesting match (albeit possibly
         # empty!), we may as well suck up the matching junk on each
@@ -404,16 +390,14 @@ cdef class SequenceMatcher:
         # figuring out what to do with it.  In the case of an empty
         # interesting match, this is clearly the right thing to do,
         # because no other kind of match is possible in the regions.
-        #if isjunk is not None: todo
-        if True:
-            while besti > alo and bestj > blo and \
-                  isbjunk(b[bestj-1]) and \
-                  a[besti-1] == b[bestj-1]:
-                besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
-            while besti+bestsize < ahi and bestj+bestsize < bhi and \
-                  isbjunk(b[bestj+bestsize]) and \
-                  a[besti+bestsize] == b[bestj+bestsize]:
-                bestsize = bestsize + 1
+        while besti > alo and bestj > blo and \
+              isbjunk(b[bestj-1]) and \
+              a[besti-1] == b[bestj-1]:
+            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
+        while besti+bestsize < ahi and bestj+bestsize < bhi and \
+              isbjunk(b[bestj+bestsize]) and \
+              a[besti+bestsize] == b[bestj+bestsize]:
+            bestsize = bestsize + 1
 
         return CMatch(besti, bestj, bestsize)
 

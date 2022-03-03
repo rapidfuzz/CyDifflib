@@ -106,6 +106,10 @@ class TestSFbugs(unittest.TestCase):
     #        [((1, '\x00-2\x01'), (1, '\x00+3\x01'), True)],
     #    )
 
+    def test_issue3(self):
+        a = '计算:[小题]根号81+-273+-3分之22;[小题]-273+根号9-4分之1×根号0.16.'
+        b = '已知3x+1的算术平方根是4,x+2y的立方根是-1,(1)求x、y的值；(2)求2x-5y的平方根.'
+        self.assertEqual(cydifflib.SequenceMatcher(None, a, b).ratio(), 0.12)
 
 patch914575_from1 = """
    1. Beautiful is beTTer than ugly.
