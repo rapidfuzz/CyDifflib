@@ -24,7 +24,7 @@
 
 
 ## 🚀 Benchmarks
-The following benchmark compares the performance in the original difflib implementation, the library [cdifflib](https://github.com/mduggan/cdifflib) and CyDifflib
+The following [benchmark](https://github.com/maxbachmann/CyDifflib/tree/main/bench) compares the performance in the original [difflib](https://docs.python.org/3.10/library/difflib.html) implementation, the library [cdifflib](https://github.com/mduggan/cdifflib) and CyDifflib
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/maxbachmann/CyDifflib/main/bench/CyDifflib.svg?sanitize=true" alt="Benchmark CyDifflib">
