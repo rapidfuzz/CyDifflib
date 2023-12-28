@@ -2,8 +2,8 @@
  CyDifflib
 </h1>
 <p align="center">
-  <a href="https://github.com/maxbachmann/CyDifflib/actions">
-    <img src="https://github.com/maxbachmann/CyDifflib/workflows/Build/badge.svg"
+  <a href="https://github.com/rapidfuzz/CyDifflib/actions">
+    <img src="https://github.com/rapidfuzz/CyDifflib/workflows/Build/badge.svg"
          alt="Continous Integration">
   </a>
   <a href="https://pypi.org/project/cydifflib/">
@@ -14,8 +14,8 @@
     <img src="https://img.shields.io/pypi/pyversions/cydifflib"
          alt="Python versions">
   </a><br/>
-  <a href="https://github.com/maxbachmann/CyDifflib/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/maxbachmann/CyDifflib"
+  <a href="https://github.com/rapidfuzz/CyDifflib/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/rapidfuzz/CyDifflib"
          alt="GitHub license">
   </a>
 </p>
@@ -24,10 +24,10 @@
 
 
 ## 🚀 Benchmarks
-The following [benchmark](https://github.com/maxbachmann/CyDifflib/tree/main/bench) compares the performance in the original [difflib](https://docs.python.org/3.10/library/difflib.html) implementation, the library [cdifflib](https://github.com/mduggan/cdifflib) and CyDifflib
+The following [benchmark](https://github.com/rapidfuzz/CyDifflib/tree/main/bench) compares the performance in the original [difflib](https://docs.python.org/3.10/library/difflib.html) implementation, the library [cdifflib](https://github.com/mduggan/cdifflib) and CyDifflib
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/maxbachmann/CyDifflib/main/bench/CyDifflib.svg?sanitize=true" alt="Benchmark CyDifflib">
+<img src="https://raw.githubusercontent.com/rapidfuzz/CyDifflib/main/bench/CyDifflib.svg?sanitize=true" alt="Benchmark CyDifflib">
 </p>
 
 ## ⚙️ Installation
@@ -42,7 +42,7 @@ CyDifflib provides binary wheels for all common platforms.
 
 For a source build (for example from a SDist packaged) you only require a C++11 compatible compiler. You can install directly from GitHub if you would like.
 ```
-pip install git+https://github.com/maxbachmann/CyDifflib.git@main
+pip install git+https://github.com/rapidfuzz/CyDifflib.git@main
 ```
 
 ## 📖 Usage
@@ -64,11 +64,11 @@ from thefuzz import fuzz
 ## 👍 Contributing
 
 PRs are welcome!
-- Found a bug? Report it in form of an [issue](https://github.com/maxbachmann/CyDifflib/issues). Any difference in behavior to difflib is considered as a bug.
+- Found a bug? Report it in form of an [issue](https://github.com/rapidfuzz/CyDifflib/issues). Any difference in behavior to difflib is considered as a bug.
 - Can make something faster? Great! Just avoid external dependencies and remember that external behavior does not change.
 - Have no time to code? Tell your friends and subscribers about CyDifflib.
 
 Thank you :heart:
 
 ## ⚠️ License
-Copyright 2021-present [Max Bachmann](https://github.com/maxbachmann). `CyDifflib` is free and open-source software licensed under the [MIT License](https://github.com/maxbachmann/CyDifflib/blob/main/LICENSE).
+Copyright 2021-present [Max Bachmann](https://github.com/maxbachmann). `CyDifflib` is free and open-source software licensed under the [MIT License](https://github.com/rapidfuzz/CyDifflib/blob/main/LICENSE).
