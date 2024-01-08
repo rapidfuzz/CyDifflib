@@ -29,6 +29,12 @@ from __future__ import annotations
 
 __author__ = "Max Bachmann"
 __license__ = "MIT"
-__version__ = "1.0.1"
+
+import importlib.metadata
+
+try:
+    __version__: str = importlib.metadata.version(__package__ or __name__)
+except importlib.metadata.PackageNotFoundError:
+    __version__: str = "0.0.0"
 
 from ._initialize import *
