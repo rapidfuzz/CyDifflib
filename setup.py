@@ -7,7 +7,7 @@ with open("README.md", encoding="utf8") as f:
 
 setup(
     name="cydifflib",
-    version="1.0.1",
+    version="1.1.0",
     url="https://github.com/rapidfuzz/cydifflib",
     author="Max Bachmann",
     author_email="pypi@maxbachmann.de",
@@ -28,5 +28,5 @@ setup(
     package_dir={"": "src"},
     zip_safe=True,
     include_package_data=True,
-    python_requires=">=3.6",
+    python_requires=">=3.8",
 )
