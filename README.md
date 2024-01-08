@@ -4,7 +4,7 @@
 <p align="center">
   <a href="https://github.com/rapidfuzz/CyDifflib/actions">
     <img src="https://github.com/rapidfuzz/CyDifflib/workflows/Build/badge.svg"
-         alt="Continous Integration">
+         alt="Continuous Integration">
   </a>
   <a href="https://pypi.org/project/cydifflib/">
     <img src="https://img.shields.io/pypi/v/cydifflib"
@@ -49,7 +49,7 @@ pip install git+https://github.com/rapidfuzz/CyDifflib.git@main
 
 The library can be used in the same way as difflib. Just use the `cydifflib` module instead of `difflib`:
 ```python
-#from difflib import SequenceMatcher
+# from difflib import SequenceMatcher
 from cydifflib import SequenceMatcher
 ```
 The official [documentation of difflib](https://docs.python.org/3.10/library/difflib.html) explains how to use the library. If you work with a library which internally uses some of the algorithms of difflib it is possible to replace the implementation before importing this library. E.g. for `thefuzz` this can be done in the following way:
