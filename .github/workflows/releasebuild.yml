@@ -54,7 +54,7 @@ jobs:
         exclude:
           # PyPy only supports x86_64 on Windows
           - arch: auto32
-            python_tag: "pp39-*"
+            python_tag: "pp38-*"
           - arch: auto32
             python_tag: "pp39-*"
 
