@@ -4,5 +4,6 @@ include README.md
 include LICENSE
 include pyproject.toml
 
+recursive-include tests *
 include src/cython/CMakeLists.txt
 recursive-include src/cython *.pyx *.cxx
