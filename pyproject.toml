@@ -78,7 +78,10 @@ extend-ignore = [
   "PT004",  # Use underscore for non-returning fixture (use usefixture instead)
   "PTH123", # use pathlib instead of builtin open
 
-  "F403" # todo we should do better in the future
+  "F403", # todo we should do better in the future
+  "RUF001", # this simply leads to incorrect code
+
+  "PT027" # we want to keep the test code close to the one in cpython
 ]
 target-version = "py37"
 src = ["src"]

@@ -25,6 +25,7 @@ Class Differ:
 Class HtmlDiff:
     For producing HTML side by side comparison with change highlights.
 """
+
 from __future__ import annotations
 
 __author__ = "Max Bachmann"
