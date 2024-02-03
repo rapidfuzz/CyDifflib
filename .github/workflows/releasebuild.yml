@@ -85,7 +85,7 @@ jobs:
       - uses: actions/setup-python@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.15.0
+        uses: pypa/cibuildwheel@v2.16.5
         with:
           package-dir: cydifflib.tar.gz
           output-dir: wheelhouse
@@ -134,7 +134,7 @@ jobs:
         run: cp dist/*.tar.gz cydifflib.tar.gz
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.15.0
+        uses: pypa/cibuildwheel@v2.16.5
         with:
           package-dir: cydifflib.tar.gz
           output-dir: wheelhouse
@@ -186,7 +186,7 @@ jobs:
         name: Set up QEMU
 
       - name: Build wheel
-        uses: pypa/cibuildwheel@v2.15.0
+        uses: pypa/cibuildwheel@v2.16.5
         with:
           package-dir: cydifflib.tar.gz
           output-dir: wheelhouse
