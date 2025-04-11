@@ -18,7 +18,6 @@ function(create_cython_target _name)
   endif()
 endfunction(create_cython_target)
 
-
 function(rf_add_library name)
   if(CMAKE_VERSION VERSION_LESS 3.17)
     python_add_library(${name} MODULE ${ARGV})
@@ -34,7 +33,6 @@ function(rf_add_library name)
     python_add_library(${name} MODULE WITH_SOABI ${ARGV})
   endif()
 endfunction(rf_add_library)
-
 
 create_cython_target(_initialize)
 rf_add_library(_initialize ${_initialize})

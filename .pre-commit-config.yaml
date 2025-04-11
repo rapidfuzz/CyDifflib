@@ -14,14 +14,14 @@
 
 exclude: |
     (?x)(
-        ^tests/test_cydifflib_expect.html
+        ^tests/test_cydifflib_expect.html|
+        tools/sdist.patch
     )
-
 
 repos:
 # Standard hooks
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: "v4.5.0"
+  rev: "v5.0.0"
   hooks:
   - id: check-added-large-files
   - id: check-case-conflict
@@ -37,27 +37,27 @@ repos:
   - id: trailing-whitespace
 
 # Black, the code formatter, natively supports pre-commit
-- repo: https://github.com/psf/black
-  rev: "24.1.1" # Keep in sync with blacken-docs
+- repo: https://github.com/psf/black-pre-commit-mirror
+  rev: "25.1.0" # Keep in sync with blacken-docs
   hooks:
   - id: black
 
 # Also code format the docs
 - repo: https://github.com/asottile/blacken-docs
-  rev: "1.16.0"
+  rev: "1.19.1"
   hooks:
   - id: blacken-docs
     additional_dependencies:
-    - black==22.8.0 # keep in sync with black hook
+    - black==24.2.0 # keep in sync with black hook
 
 # Changes tabs to spaces
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: "v1.5.4"
+  rev: "v1.5.5"
   hooks:
   - id: remove-tabs
 
 - repo: https://github.com/sirosen/texthooks
-  rev: "0.6.4"
+  rev: "0.6.8"
   hooks:
   - id: fix-ligatures
   - id: fix-smartquotes
@@ -74,7 +74,7 @@ repos:
 
 # PyLint has native support - not always usable, but works for us
 - repo: https://github.com/PyCQA/pylint
-  rev: "v3.0.3"
+  rev: "v3.3.6"
   hooks:
   - id: pylint
     files: ^pybind11
@@ -99,7 +99,7 @@ repos:
 
 # Checks the manifest for missing files (native support)
 - repo: https://github.com/mgedmin/check-manifest
-  rev: "0.49"
+  rev: "0.50"
   hooks:
   - id: check-manifest
     # This is a slow hook, so only run this if --hook-stage manual is passed
@@ -107,14 +107,14 @@ repos:
     additional_dependencies: [cmake, ninja]
 
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.2.0
+  rev: v0.11.5
   hooks:
   - id: ruff
     args: ["--fix", "--show-fixes"]
 
 # Check for spelling
 - repo: https://github.com/codespell-project/codespell
-  rev: "v2.2.6"
+  rev: "v2.4.1"
   hooks:
   - id: codespell
     exclude: ".*/test_.*.py"
@@ -122,7 +122,7 @@ repos:
 
 # Check for common shell mistakes
 - repo: https://github.com/shellcheck-py/shellcheck-py
-  rev: "v0.9.0.6"
+  rev: "v0.10.0.1"
   hooks:
   - id: shellcheck
 
@@ -134,3 +134,10 @@ repos:
     language: pygrep
     entry: PyBind|Numpy|Cmake|CCache|PyTest
     exclude: ^\.pre-commit-config.yaml$
+
+# Clang format the codebase automatically
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: "v20.1.0"
+  hooks:
+  - id: clang-format
+    types_or: [c++, c]

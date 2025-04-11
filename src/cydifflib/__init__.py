@@ -26,6 +26,8 @@ Class HtmlDiff:
     For producing HTML side by side comparison with change highlights.
 """
 
+from __future__ import annotations
+
 __author__ = "Max Bachmann"
 __license__ = "MIT"
 __version__: str = "1.2.0"
