@@ -26,16 +26,8 @@ Class HtmlDiff:
     For producing HTML side by side comparison with change highlights.
 """
 
-from __future__ import annotations
-
 __author__ = "Max Bachmann"
 __license__ = "MIT"
-
-import importlib.metadata
-
-try:
-    __version__: str = importlib.metadata.version(__package__ or __name__)
-except importlib.metadata.PackageNotFoundError:
-    __version__: str = "0.0.0"
+__version__: str = "1.2.0"
 
 from ._initialize import *

@@ -1,12 +1,57 @@
 [build-system]
 requires = [
-    "setuptools>=42",
-    "scikit-build~=0.17.0",
-    "cmake",
-    "ninja; platform_system!='Windows'",
-    "Cython >=3.0.7, <3.1.0"
+    "scikit-build-core>=0.11",
+    "Cython>=3.0.12,<3.1.0"
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "cydifflib"
+dynamic = ["version"]
+requires-python = ">= 3.9"
+authors = [
+  {name = "Max Bachmann", email = "pypi@maxbachmann.de"},
+]
+maintainers = [
+  {name = "Max Bachmann", email = "pypi@maxbachmann.de"},
+]
+description = "Fast implementation of difflib's algorithms"
+readme = "README.md"
+license = "MIT"
+classifiers=[
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/rapidfuzz/CyDifflib"
+Repository = "https://github.com/rapidfuzz/CyDifflib.git"
+Issues = "https://github.com/rapidfuzz/CyDifflib/issues"
+Changelog = "https://github.com/rapidfuzz/CyDifflib/blob/main/CHANGELOG.md"
+
+[tool.scikit-build]
+sdist.include = [
+  "src/cydifflib/*.cxx",
+]
+sdist.exclude = [
+  ".github"
+]
+wheel.exclude = [
+  "**.pyx",
+  "**.cxx",
+  "**.cpp",
+  "**.hpp",
+  "CMakeLists.txt",
+  "generate.sh"
+]
+
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "src/cydifflib/__init__.py"
 
 [tool.black]
 line-length = 120
