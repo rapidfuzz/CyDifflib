@@ -1,4 +1,4 @@
-name: Full Build
+name: Build
 
 
 on:
@@ -29,8 +29,8 @@ jobs:
       # The cythonized files allow installation from the sdist without cython
       - name: Generate cython
         run: |
-          chmod +x ./src/cython/generate.sh
-          ./src/cython/generate.sh
+          chmod +x ./src/cydifflib/generate.sh
+          ./src/cydifflib/generate.sh
 
       - name: Build sdist
         run: |
