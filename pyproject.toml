@@ -95,9 +95,6 @@ disable = [
 target-version = "py37"
 src = ["src"]
 exclude = []
-flake8-unused-arguments.ignore-variadic-names = true
-isort.required-imports = ["from __future__ import annotations"]
-
 
 [tool.ruff.lint]
 select = [
@@ -139,6 +136,8 @@ unfixable = [
   "T20",  # Removes print statements
   "F841", # Removes unused variables
 ]
+flake8-unused-arguments.ignore-variadic-names = true
+isort.required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["T20", "PT009", "ARG001", "PTH118", "PTH120"]
